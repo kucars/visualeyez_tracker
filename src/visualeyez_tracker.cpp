@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     std::string server_ip,server_port;
 
     privateNh.param("socket_timeout", socket_timeout, int(10));
-    privateNh.param<std::string>("server_ip",      server_ip,   std::string("127.0.0.1"));
+    privateNh.param<std::string>("server_ip",      server_ip,   std::string("10.10.101.60"));
     privateNh.param<std::string>("server_port",    server_port, std::string("12345"));
     ROS_INFO("Server Ip is:%s port is:%s socket timeout is:%d",server_ip.c_str(),server_port.c_str(),socket_timeout);
 
@@ -102,10 +102,9 @@ int main(int argc, char *argv[])
     deadline.expires_at(boost::posix_time::pos_infin);
     check_deadline(deadline, socket);
     boost::posix_time::seconds timeout(socket_timeout);
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(20);
     boost::system::error_code error;
     std::size_t length;
-    double increment = 0.001;
     while (nh.ok())
     {
         try
@@ -116,26 +115,43 @@ int main(int argc, char *argv[])
             boost::asio::async_read_until(socket, receiveBuffer, '\n', boost::bind(&handle_receive, _1, _2, &error, &length));
             io_service.poll();//io_service.run_one();io_service.run_one();
             std::istream is(&receiveBuffer);
+            //std::istream bu(&receiveBuffer);
+            //std::string line;
+            //std::getline(bu, line);
+            //ROS_INFO("This is what I GOT: [%s] with size:%d)",line.c_str(),receiveBuffer.size());
+
             std::vector<std::string> tokens;
             copy(std::istream_iterator<std::string>(is),
                      std::istream_iterator<std::string>(),
                      std::back_inserter<std::vector<std::string> >(tokens));
-            if(tokens.size()==4)
+            /*
+            std::cout<<"Got a new Line, number ot tokens:"<<tokens.size()<<"\n";
+            for(int i=0;i<tokens.size();i++)
             {
-                trackerPose.header.stamp = ros::Time::now();
-                trackerPose.tracker_id   = tokens[0];
-                increment+=0.0001;
-                trackerPose.pose.x       = atof(tokens[1].c_str())*increment;
-                trackerPose.pose.y       = atof(tokens[2].c_str())*increment;
-                trackerPose.pose.z       = atof(tokens[3].c_str())*increment;
-                ROS_INFO(" VisualEyez Sending Location: [%s] [%f] [%f] [%f]",trackerPose.tracker_id.c_str(),trackerPose.pose.x ,trackerPose.pose.y ,trackerPose.pose.z );
+                if(tokens[i]!="" && tokens[i]!=" ")
+                    std::cout<<"Token:"<<tokens[i]<<"\n";
+            }
+           */
+            if(((tokens.size()-1)%4)==0 && tokens.size()!=1)
+            {
+                int tuples = (tokens.size()/4);
+                for(int i=0;i<tuples;i++)
+                {
+
+                    trackerPose.header.stamp = ros::Time::now();
+                    trackerPose.tracker_id   = tokens[4*i + 0];
+                    trackerPose.pose.x       = atof(tokens[4*i + 1].c_str());
+                    trackerPose.pose.y       = atof(tokens[4*i + 2].c_str());
+                    trackerPose.pose.z       = atof(tokens[4*i + 3].c_str());
+                    ROS_INFO(" VisualEyez Sending Location: [%s] [%f] [%f] [%f]",trackerPose.tracker_id.c_str(),trackerPose.pose.x ,trackerPose.pose.y ,trackerPose.pose.z );
+                    trackerPositionPublisher.publish(trackerPose);
+                }
             }
         }
         catch (std::exception& e)
         {
             ROS_ERROR_STREAM("cRIO receiver threw an exception: " << e.what());
         }
-        trackerPositionPublisher.publish(trackerPose);
         ros::spinOnce();
         loop_rate.sleep();
     }
