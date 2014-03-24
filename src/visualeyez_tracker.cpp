@@ -42,6 +42,7 @@
   Remember that boost compatibility is important (methods and functions changed in the latest boost versions)!
   Boost 1.46.x is used in Ubuntu 12.04 so stick to it!
 */
+
 using boost::asio::ip::tcp;
 using boost::asio::deadline_timer;
 
@@ -102,7 +103,7 @@ int main(int argc, char *argv[])
     deadline.expires_at(boost::posix_time::pos_infin);
     check_deadline(deadline, socket);
     boost::posix_time::seconds timeout(socket_timeout);
-    ros::Rate loop_rate(20);
+    ros::Rate loop_rate(50);
     boost::system::error_code error;
     std::size_t length;
     while (nh.ok())
