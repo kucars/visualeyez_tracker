@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     std::string server_ip,server_port;
 
     privateNh.param("socket_timeout", socket_timeout, int(10));
-    privateNh.param<std::string>("server_ip",      server_ip,   std::string("10.10.101.60"));
+    privateNh.param<std::string>("server_ip",      server_ip,   std::string("10.10.101.50"));
     privateNh.param<std::string>("server_port",    server_port, std::string("12345"));
     ROS_INFO("Server Ip is:%s port is:%s socket timeout is:%d",server_ip.c_str(),server_port.c_str(),socket_timeout);
 
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
                     trackerPose.pose.x       = atof(tokens[4*i + 1].c_str());
                     trackerPose.pose.y       = atof(tokens[4*i + 2].c_str());
                     trackerPose.pose.z       = atof(tokens[4*i + 3].c_str());
-                    ROS_INFO(" VisualEyez Sending Location: [%s] [%f] [%f] [%f]",trackerPose.tracker_id.c_str(),trackerPose.pose.x ,trackerPose.pose.y ,trackerPose.pose.z );
+                    //ROS_INFO(" VisualEyez Sending Location: [%s] [%f] [%f] [%f]",trackerPose.tracker_id.c_str(),trackerPose.pose.x ,trackerPose.pose.y ,trackerPose.pose.z );
                     trackerPositionPublisher.publish(trackerPose);
                 }
             }
