@@ -4,12 +4,14 @@ project(visualeyez_tracker)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+find_package(Eigen REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
   message_generation
   geometry_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -52,11 +54,10 @@ add_message_files(
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+   FILES
+   AddRobotTracker.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -82,9 +83,9 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  LIBRARIES visualeyez_tracker
+  LIBRARIES pose_broadcaster
 #  CATKIN_DEPENDS roscpp rospy std_msgs
-   CATKIN_DEPENDS message_runtime geometry_msgs std_msgs
+   CATKIN_DEPENDS message_runtime geometry_msgs std_msgs tf
 #  DEPENDS system_lib
 )
 
@@ -95,14 +96,15 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
-include_directories(
+include_directories(include
   ${catkin_INCLUDE_DIRS}
+  ${Eigen_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(visualeyez_tracker
-#   src/${PROJECT_NAME}/visualeyez_tracker.cpp
-# )
+add_library(pose_broadcaster
+   src/PoseBroadcaster.cpp
+)
 
 ## Declare a cpp executable
 add_executable(visualeyez_tracker src/visualeyez_tracker.cpp)
@@ -112,9 +114,28 @@ add_executable(visualeyez_tracker src/visualeyez_tracker.cpp)
 add_dependencies(visualeyez_tracker visualeyez_tracker_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(visualeyez_tracker
+target_link_libraries(visualeyez_tracker pose_broadcaster
    ${catkin_LIBRARIES}
  )
+
+#add_executable(markers_to_tf src/markers_to_tf.cpp)
+
+#add_dependencies(markers_to_tf visualeyez_tracker_generate_messages_cpp)
+
+## Specify libraries to link a library or executable target against
+#target_link_libraries(markers_to_tf
+#   ${catkin_LIBRARIES}
+#   ${Eigen_LIBRARIES}
+# )
+
+add_executable(markers_debug src/markers_debug.cpp)
+add_dependencies(markers_debug visualeyez_tracker_generate_messages_cpp)
+target_link_libraries(markers_debug
+   ${catkin_LIBRARIES}
+   ${Eigen_LIBRARIES}
+ )
+
+
 
 #############
 ## Install ##

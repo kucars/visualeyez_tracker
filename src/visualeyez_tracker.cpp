@@ -33,6 +33,8 @@
 #include <geometry_msgs/Point.h>
 #include <visualeyez_tracker/TrackerPose.h>
 
+#include <visualeyez_tracker/PoseBroadcaster.h>
+
 /*
   References used to develop this code:
   https://github.com/cwru-robotics/cwru-ros-pkg/blob/master/cwru_semi_stable/cwru_base/src/crio_receiver.cpp
@@ -103,9 +105,12 @@ int main(int argc, char *argv[])
     deadline.expires_at(boost::posix_time::pos_infin);
     check_deadline(deadline, socket);
     boost::posix_time::seconds timeout(socket_timeout);
-    ros::Rate loop_rate(50);
+    ros::Rate loop_rate(500);
     boost::system::error_code error;
     std::size_t length;
+
+    PoseBroadcaster pose_broadcaster(nh);
+
     while (nh.ok())
     {
         try
@@ -141,9 +146,10 @@ int main(int argc, char *argv[])
 
                     trackerPose.header.stamp = ros::Time::now();
                     trackerPose.tracker_id   = tokens[4*i + 0];
-                    trackerPose.pose.x       = atof(tokens[4*i + 1].c_str());
-                    trackerPose.pose.y       = atof(tokens[4*i + 2].c_str());
-                    trackerPose.pose.z       = atof(tokens[4*i + 3].c_str());
+                    trackerPose.pose.x       = atof(tokens[4*i + 1].c_str())/1000.0;
+                    trackerPose.pose.y       = atof(tokens[4*i + 2].c_str())/1000.0;
+                    trackerPose.pose.z       = atof(tokens[4*i + 3].c_str())/1000.0;
+                    pose_broadcaster.updateMarker(trackerPose);
                     //ROS_INFO(" VisualEyez Sending Location: [%s] [%f] [%f] [%f]",trackerPose.tracker_id.c_str(),trackerPose.pose.x ,trackerPose.pose.y ,trackerPose.pose.z );
                     trackerPositionPublisher.publish(trackerPose);
                 }
