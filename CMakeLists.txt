@@ -118,24 +118,6 @@ target_link_libraries(visualeyez_tracker pose_broadcaster
    ${catkin_LIBRARIES}
  )
 
-#add_executable(markers_to_tf src/markers_to_tf.cpp)
-
-#add_dependencies(markers_to_tf visualeyez_tracker_generate_messages_cpp)
-
-## Specify libraries to link a library or executable target against
-#target_link_libraries(markers_to_tf
-#   ${catkin_LIBRARIES}
-#   ${Eigen_LIBRARIES}
-# )
-
-add_executable(markers_debug src/markers_debug.cpp)
-add_dependencies(markers_debug visualeyez_tracker_generate_messages_cpp)
-target_link_libraries(markers_debug
-   ${catkin_LIBRARIES}
-   ${Eigen_LIBRARIES}
- )
-
-
 
 #############
 ## Install ##
