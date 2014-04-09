@@ -1,5 +1,5 @@
 <launch>
-    <node name="visualeyez_tracker" pkg="visualeyez_tracker" type="visualeyez_tracker" output="screen">
+    <node name="visualeyez_tracker" pkg="visualeyez_tracker" type="visualeyez_tracker" output="screen" launch-prefix="xterm -e gdb --args">
         <param name="socket_timeout" value="20" type="int" />
         <param name="server_port" value="12345" type="str"/>
         <param name="server_ip"   value="10.10.101.17" type="str"/>

@@ -60,6 +60,10 @@ class Robot
     ros::Publisher odom_pub;
     ros::NodeHandle n_;
 
+    std::vector<Eigen::Vector3d> markers_offsets;
+
+    int update_count_;
+
 
 public:
 
@@ -71,6 +75,8 @@ public:
     void updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & position);
 
     void updateRobotPose();
+
+    void flatTrim();
 };
 
 

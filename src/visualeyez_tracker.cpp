@@ -1,24 +1,24 @@
-/***************************************************************************
-* Copyright (C) 2013 - 2014 by                                             *
-* Tarek Taha, Khalifa University Robotics Institute KURI                   *
-*                     <tarek.taha@kustar.ac.ae>                            *
-*                                                                          *
-*                                                                          *
-* This program is free software; you can redistribute it and/or modify     *
-* it under the terms of the GNU General Public License as published by     *
-* the Free Software Foundation; either version 2 of the License, or        *
-* (at your option) any later version.                                      *
-*                                                                          *
-* This program is distributed in the hope that it will be useful,          *
-* but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-* GNU General Public License for more details.                             *
-*                                                                          *
-* You should have received a copy of the GNU General Public License        *
-* along with this program; if not, write to the                            *
-* Free Software Foundation, Inc.,                                          *
-* 51 Franklin Steet, Fifth Floor, Boston, MA 02111-1307, USA.              *
-***************************************************************************/
+/*************************************************************************************
+* Copyright (C) 2013 - 2014 by                                                       *
+* Tarek Taha, Rui P. de Figueiredo, Khalifa University Robotics Institute KURI       *
+*                     <tarek.taha@kustar.ac.ae>, <rui.defigueiredo@kustar.ac.ae>     *
+*                                                                                    *
+*                                                                                    *
+* This program is free software; you can redistribute it and/or modify               *
+* it under the terms of the GNU General Public License as published by               *
+* the Free Software Foundation; either version 2 of the License, or                  *
+* (at your option) any later version.                                                *
+*                                                                                    *
+* This program is distributed in the hope that it will be useful,                    *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of                     *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the                       *
+* GNU General Public License for more details.                                       *
+*                                                                                    *
+* You should have received a copy of the GNU General Public License                  *
+* along with this program; if not, write to the                                      *
+* Free Software Foundation, Inc.,                                                    *
+* 51 Franklin Steet, Fifth Floor, Boston, MA 02111-1307, USA.                        *
+**************************************************************************************/
 #include <endian.h>
 #include <algorithm>
 #include <iterator>
@@ -58,9 +58,32 @@ void check_deadline(deadline_timer& deadline, tcp::socket& socket)
     deadline.async_wait(boost::bind(&check_deadline, boost::ref(deadline), boost::ref(socket)));
 }
 
-static void handle_receive(const boost::system::error_code& input_ec, std::size_t input_len,boost::system::error_code* output_ec, std::size_t* output_len)
+boost::asio::streambuf receiveBuffer;
+bool gotTheData = false;
+std::vector<std::string> tokens;
+
+static void handle_receive(const boost::system::error_code& errorCode, std::size_t inputLength,boost::system::error_code* output_ec, std::size_t* outputLength)
 {
-    //ROS_INFO("Yes, they call me every now and then");
+    if(!errorCode)
+    {
+        tokens.clear();
+        //ROS_INFO_STREAM("BUFFER SIZE:"<<receiveBuffer.size());fflush(stdout);
+        std::istream is(&receiveBuffer);
+        copy(std::istream_iterator<std::string>(is),
+             std::istream_iterator<std::string>(),
+             std::back_inserter<std::vector<std::string> >(tokens));
+        /*
+        std::cout<<"Got a new Line, number ot tokens:"<<tokens.size()<<"\n";fflush(stdout);
+        for(int i=0;i<tokens.size();i++)
+        {
+            if(tokens[i]!="" && tokens[i]!=" ")
+                std::cout<<"Token:"<<tokens[i]<<"\n";fflush(stdout);
+        }
+        */
+        gotTheData = true;
+    }
+    else
+        ROS_INFO_STREAM("Yes, they call me every now and Error Code: "<<output_ec->message());
 }
 
 void connect_handler(const boost::system::error_code& error)
@@ -92,7 +115,7 @@ int main(int argc, char *argv[])
     ros::Publisher trackerPositionPublisher = nh.advertise<visualeyez_tracker::TrackerPose>("TrackerPosition", 100);
 
 
-    boost::asio::streambuf receiveBuffer;
+
     boost::asio::io_service io_service;
     tcp::resolver resolver(io_service);
     tcp::resolver::query query(tcp::v4(), server_ip.c_str(), server_port.c_str());
@@ -119,25 +142,11 @@ int main(int argc, char *argv[])
             length = 0;
             deadline.expires_from_now(timeout);
             boost::asio::async_read_until(socket, receiveBuffer, '\n', boost::bind(&handle_receive, _1, _2, &error, &length));
-            io_service.poll();//io_service.run_one();io_service.run_one();
-            std::istream is(&receiveBuffer);
-            //std::istream bu(&receiveBuffer);
-            //std::string line;
-            //std::getline(bu, line);
-            //ROS_INFO("This is what I GOT: [%s] with size:%d)",line.c_str(),receiveBuffer.size());
-
-            std::vector<std::string> tokens;
-            copy(std::istream_iterator<std::string>(is),
-                     std::istream_iterator<std::string>(),
-                     std::back_inserter<std::vector<std::string> >(tokens));
-            /*
-            std::cout<<"Got a new Line, number ot tokens:"<<tokens.size()<<"\n";
-            for(int i=0;i<tokens.size();i++)
+            while(!gotTheData)
             {
-                if(tokens[i]!="" && tokens[i]!=" ")
-                    std::cout<<"Token:"<<tokens[i]<<"\n";
+                io_service.poll();
             }
-           */
+            gotTheData = false;
             if(((tokens.size()-1)%4)==0 && tokens.size()!=1)
             {
                 int tuples = (tokens.size()/4);
