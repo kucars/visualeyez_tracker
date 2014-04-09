@@ -1,0 +1,6 @@
+string robot_name
+string origin_marker_id
+string x_marker_id
+string y_marker_id
+---
+
