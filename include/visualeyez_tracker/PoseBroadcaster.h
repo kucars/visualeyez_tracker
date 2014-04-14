@@ -64,7 +64,7 @@ class Robot
 
     int update_count_;
 
-
+    bool marker_change;
 public:
 
     Robot(ros::NodeHandle & n,std::string robot_id,
@@ -106,5 +106,6 @@ public:
                                  visualeyez_tracker::AddRobotTracker::Response &res);
 
     void updateMarker(const visualeyez_tracker::TrackerPose & trackerPose);
+    void updateMarker(const std::vector<visualeyez_tracker::TrackerPose>  &trackerPoses);
 };
 

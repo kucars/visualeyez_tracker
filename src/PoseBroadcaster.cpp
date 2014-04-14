@@ -46,7 +46,8 @@ Robot::Robot(ros::NodeHandle & n,std::string robot_id,
     n_(n),
     robot_id_(robot_id),
     n_robot_priv(robot_id),
-    update_count_(0)
+    update_count_(0),
+    marker_change(false)
 {
     marker_id_to_type[origin_marker_id_]=0;
     marker_id_to_type[x_marker_id_]=1;
@@ -68,6 +69,7 @@ Robot::Robot(ros::NodeHandle & n,std::string robot_id,
 
 void Robot::updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & position)
 {
+    marker_change = true;
     // Get marker type from id
     int type=marker_id_to_type.find(marker_id)->second;
 
@@ -81,20 +83,24 @@ void Robot::updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & posi
     for(int i=0; i<markers_position.size(); ++i)
     {
         if(!markers_state[i])
+        {    
             return;
+        }
     }
 
     if(update_count_==0)
     {
         flatTrim();
     }
-    updateRobotPose();
+    //updateRobotPose();
     ++update_count_;
 
 }
 
 void Robot::updateRobotPose()
 {
+    if(!marker_change)
+	return;
     //Base - 0
     //X    - 1
     //Y    - 2
@@ -145,10 +151,11 @@ void Robot::updateRobotPose()
     odom_msg.pose.pose=pose_msg.pose;
     odom_pub.publish(odom_msg);
 
-    for(int i=0; i<markers_state.size(); ++i)
+    /*for(int i=0; i<markers_state.size(); ++i)
     {
         markers_state[i]=false;
-    }
+    }*/
+    marker_change=false;
 }
 
 void Robot::flatTrim()
@@ -207,4 +214,24 @@ void PoseBroadcaster::updateMarker(const visualeyez_tracker::TrackerPose & track
     //std::cout <<  "not found:" <<marker_id << std::endl;
 }
 
+void PoseBroadcaster::updateMarker(const std::vector<visualeyez_tracker::TrackerPose>  &trackerPoses)
+{
+    for(int i=0;i<trackerPoses.size();i++)
+    {
+	    std::string marker_id(std::string(trackerPoses[i].tracker_id));
+	    Eigen::Vector3d marker_position(trackerPoses[i].pose.x, trackerPoses[i].pose.y, trackerPoses[i].pose.z);
+
+	    std::map<std::string,boost::shared_ptr<Robot> >::iterator it=robots.find(marker_id);
+	    if(it != robots.end())
+	    {
+		it->second->updateMarkerPosition(marker_id,marker_position);
+	    }
+    }
+
+    for(std::map<std::string,boost::shared_ptr<Robot> >::iterator it=robots.begin(); it !=robots.end(); ++it)
+    {
+	it->second->updateRobotPose();
+    }
+
+}
 

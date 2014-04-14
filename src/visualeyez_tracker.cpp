@@ -72,14 +72,15 @@ static void handle_receive(const boost::system::error_code& errorCode, std::size
         copy(std::istream_iterator<std::string>(is),
              std::istream_iterator<std::string>(),
              std::back_inserter<std::vector<std::string> >(tokens));
-        /*
+
+	/*std::cout<<"Got a new Line, number ot tokens:"<<is<<std::endl;fflush(stdout);        
         std::cout<<"Got a new Line, number ot tokens:"<<tokens.size()<<"\n";fflush(stdout);
         for(int i=0;i<tokens.size();i++)
         {
             if(tokens[i]!="" && tokens[i]!=" ")
                 std::cout<<"Token:"<<tokens[i]<<"\n";fflush(stdout);
-        }
-        */
+        }*/
+     
         gotTheData = true;
     }
     else
@@ -141,15 +142,19 @@ int main(int argc, char *argv[])
             error = boost::asio::error::would_block;
             length = 0;
             deadline.expires_from_now(timeout);
+
             boost::asio::async_read_until(socket, receiveBuffer, '\n', boost::bind(&handle_receive, _1, _2, &error, &length));
             while(!gotTheData)
             {
                 io_service.poll();
             }
             gotTheData = false;
+
+
             if(((tokens.size()-1)%4)==0 && tokens.size()!=1)
             {
                 int tuples = (tokens.size()/4);
+		std::vector<visualeyez_tracker::TrackerPose> trackerPoses;
                 for(int i=0;i<tuples;i++)
                 {
 
@@ -158,10 +163,14 @@ int main(int argc, char *argv[])
                     trackerPose.pose.x       = atof(tokens[4*i + 1].c_str())/1000.0;
                     trackerPose.pose.y       = atof(tokens[4*i + 2].c_str())/1000.0;
                     trackerPose.pose.z       = atof(tokens[4*i + 3].c_str())/1000.0;
-                    pose_broadcaster.updateMarker(trackerPose);
-                    //ROS_INFO(" VisualEyez Sending Location: [%s] [%f] [%f] [%f]",trackerPose.tracker_id.c_str(),trackerPose.pose.x ,trackerPose.pose.y ,trackerPose.pose.z );
+                    trackerPoses.push_back(trackerPose);
                     trackerPositionPublisher.publish(trackerPose);
+                    //ROS_INFO(" VisualEyez Sending Location: [%s] [%f] [%f] [%f]",trackerPose.tracker_id.c_str(),trackerPose.pose.x ,trackerPose.pose.y ,trackerPose.pose.z );
                 }
+
+
+                pose_broadcaster.updateMarker(trackerPoses);
+		//std::cout << "number of tuples:" << tuples << std::endl;
             }
         }
         catch (std::exception& e)
