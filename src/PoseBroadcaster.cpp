@@ -64,7 +64,7 @@ Robot::Robot(ros::NodeHandle & n,std::string robot_id,
     }
 
     pose_pub=n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose", 100);
-    odom_pub=n_.advertise<nav_msgs::Odometry>("/ground_truth/state", 100);
+    odom_pub=n_.advertise<nav_msgs::Odometry>("odometry", 100);
 }
 
 void Robot::updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & position)
@@ -140,7 +140,20 @@ void Robot::updateRobotPose()
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
     tf::Quaternion q(quaternion.x(),quaternion.y(),quaternion.z(),quaternion.w());
     transform.setRotation(q);
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_));
+    //br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_link"));
+
+    //transform.setRotation( tf::Quaternion(0.0,0.0,0.0,1.0));
+    //transform.setOrigin( tf::Vector3(0.0, 0.0, -markers_position[0].z()) );
+    //br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_link", robot_id_+"/base_footprint"));
+    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), 0.0) );
+    double roll, pitch, yaw;
+    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+    transform.setRotation(tf::createQuaternionFromYaw(yaw));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint"));
+
+    transform.setOrigin(tf::Vector3(0.0, 0.0, markers_position[0].z()));
+    transform.setRotation(tf::createQuaternionFromRPY(roll,pitch,0.0));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_footprint", robot_id_+"/base_link"));
 
     //////////////////////
     // Publish odometry //
