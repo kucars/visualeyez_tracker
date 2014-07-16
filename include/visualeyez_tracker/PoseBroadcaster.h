@@ -56,8 +56,10 @@ class Robot
     std::vector<Eigen::Vector3d> markers_position;
     std::vector<bool> markers_state;
 
-    ros::Publisher pose_pub;
-    ros::Publisher odom_pub;
+    ros::Publisher pose_nwu_pub;
+    ros::Publisher pose_ned_pub;
+    ros::Publisher odom_nwu_pub;
+    ros::Publisher odom_ned_pub;
     ros::NodeHandle n_;
 
     std::vector<Eigen::Vector3d> markers_offsets;
