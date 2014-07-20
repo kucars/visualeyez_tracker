@@ -64,9 +64,9 @@ Robot::Robot(ros::NodeHandle & n,std::string robot_id,
     }
 
     pose_nwu_pub = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_NWU", 100);
-    pose_ned_pub = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_NED", 100);
+    pose_enu_pub = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_ENU", 100);
     odom_nwu_pub = n_.advertise<nav_msgs::Odometry>("odometry_NWU", 100);
-    odom_ned_pub = n_.advertise<nav_msgs::Odometry>("odometry_NED", 100);
+    odom_enu_pub = n_.advertise<nav_msgs::Odometry>("odometry_ENU", 100);
 }
 
 void Robot::updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & position)
@@ -119,42 +119,44 @@ void Robot::updateRobotPose()
     // Publish PoseStamped NWU//
     ////////////////////////////
 
-    geometry_msgs::PoseStamped pose_nwu_msg;
-    pose_nwu_msg.header.stamp=ros::Time::now();
+    geometry_msgs::PoseStamped pose_msg;
+    pose_msg.header.stamp=ros::Time::now();
     //pose_nwu_msg.header.frame_id=robot_id_;
-    pose_nwu_msg.header.frame_id="world";
+    pose_msg.header.frame_id="world";
 
-    pose_nwu_msg.pose.position.x=markers_position[0].x();
-    pose_nwu_msg.pose.position.y=markers_position[0].y();
-    pose_nwu_msg.pose.position.z=markers_position[0].z();
-    pose_nwu_msg.pose.orientation.w=quaternion.w();
-    pose_nwu_msg.pose.orientation.x=quaternion.x();
-    pose_nwu_msg.pose.orientation.y=quaternion.y();
-    pose_nwu_msg.pose.orientation.z=quaternion.z();
-    pose_nwu_pub.publish(pose_nwu_msg);
+    pose_msg.pose.position.x = markers_position[0].x();
+    pose_msg.pose.position.y = markers_position[0].y();
+    pose_msg.pose.position.z = markers_position[0].z();
+    pose_msg.pose.orientation.w=quaternion.w();
+    pose_msg.pose.orientation.x=quaternion.x();
+    pose_msg.pose.orientation.y=quaternion.y();
+    pose_msg.pose.orientation.z=quaternion.z();
+    pose_nwu_pub.publish(pose_msg);
+
+    //////////////////////////
+    // Publish odometry NWU //
+    //////////////////////////
+
+    nav_msgs::Odometry odom_msg;
+    odom_msg.header=pose_msg.header;
+    odom_msg.pose.pose=pose_msg.pose;
+    odom_nwu_pub.publish(odom_msg);
 
     ////////////////////////////
-    // Publish PoseStamped NED//
+    // Publish PoseStamped ENU//
     ////////////////////////////
 
-    geometry_msgs::PoseStamped pose_ned_msg;
-    pose_ned_msg.header.stamp=ros::Time::now();
-    //pose_ned_msg.header.frame_id = robot_id_;
-    pose_ned_msg.header.frame_id="world";
+    pose_msg.pose.position.x =-markers_position[0].y();
+    pose_msg.pose.position.y = markers_position[0].x();
+    pose_enu_pub.publish(pose_msg);
 
-    pose_ned_msg.pose.position.x =    markers_position[0].x();
-    pose_ned_msg.pose.position.y =  - markers_position[0].y();
-    pose_ned_msg.pose.position.z =  - markers_position[0].z();
+    //////////////////////////
+    // Publish odometry ENU //
+    //////////////////////////
 
-    double roll, pitch, yaw;
-    tf::Quaternion q_ned (quaternion.x(),quaternion.y(),quaternion.z(),quaternion.w());
-    tf::Matrix3x3 (q_ned).getRPY(roll, pitch, yaw);
-    q_ned.setRPY(roll+PI, -pitch, yaw);
-    pose_ned_msg.pose.orientation.w = q_ned.getW();
-    pose_ned_msg.pose.orientation.x = q_ned.getX();
-    pose_ned_msg.pose.orientation.y = q_ned.getY();
-    pose_ned_msg.pose.orientation.z = q_ned.getZ();
-    pose_ned_pub.publish(pose_ned_msg);
+    odom_msg.header = pose_msg.header;
+    odom_msg.pose.pose = pose_msg.pose;
+    odom_enu_pub.publish(odom_msg);
 
     ///////////////////
     // Broadcast TF  //
@@ -162,6 +164,7 @@ void Robot::updateRobotPose()
 
     static tf::TransformBroadcaster br;
     tf::Transform transform;
+    double roll, pitch, yaw;
 
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
     tf::Quaternion q(quaternion.x(),quaternion.y(),quaternion.z(),quaternion.w());
@@ -180,7 +183,7 @@ void Robot::updateRobotPose()
     //////////////////////
 
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), 0.0) );
-    transform.setRotation(tf::createQuaternionFromYaw(yaw));
+    transform.setRotation(tf::createQuaternionFromYaw(yaw+PI/4));
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint_NWU"));
 
     transform.setOrigin(tf::Vector3(0.0, 0.0, markers_position[0].z()));
@@ -188,34 +191,20 @@ void Robot::updateRobotPose()
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_footprint_NWU", robot_id_+"/base_link_NWU"));
 
     //////////////////////
-    // Broadcast TF NED //
+    // Broadcast TF ENU //
     //////////////////////
 
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), 0.0) );
-    transform.setRotation(tf::createQuaternionFromRPY(PI,0.0,yaw));
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint_NED"));
+    transform.setRotation(tf::createQuaternionFromRPY(0.0,0.0,yaw-PI/2+PI/4));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint_ENU"));
 
-    transform.setOrigin(tf::Vector3(0.0, 0.0, -markers_position[0].z()));
-    transform.setRotation(tf::createQuaternionFromRPY(roll,-pitch,0.0));
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_footprint_NED", robot_id_+"/base_link_NED"));
+    transform.setOrigin(tf::Vector3(0.0, 0.0, markers_position[0].z()));
+    transform.setRotation(tf::createQuaternionFromRPY(-pitch,roll,0.0));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_footprint_ENU", robot_id_+"/base_link_ENU"));
 
-    //////////////////////////
-    // Publish odometry NWU //
-    //////////////////////////
 
-    nav_msgs::Odometry odom_nwu_msg;
-    odom_nwu_msg.header=pose_nwu_msg.header;
-    odom_nwu_msg.pose.pose=pose_nwu_msg.pose;
-    odom_nwu_pub.publish(odom_nwu_msg);
 
-    //////////////////////////
-    // Publish odometry NED //
-    //////////////////////////
 
-    nav_msgs::Odometry odom_ned_msg;
-    odom_ned_msg.header=pose_ned_msg.header;
-    odom_ned_msg.pose.pose=pose_ned_msg.pose;
-    odom_ned_pub.publish(odom_ned_msg);
     /*for(int i=0; i<markers_state.size(); ++i)
     {
         markers_state[i]=false;
