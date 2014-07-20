@@ -195,7 +195,7 @@ void Robot::updateRobotPose()
     //////////////////////
 
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), 0.0) );
-    transform.setRotation(tf::createQuaternionFromRPY(0.0,0.0,yaw-PI/2+PI/4));
+    transform.setRotation(tf::createQuaternionFromRPY(0.0,0.0,yaw-PI/4));
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint_ENU"));
 
     transform.setOrigin(tf::Vector3(0.0, 0.0, markers_position[0].z()));
