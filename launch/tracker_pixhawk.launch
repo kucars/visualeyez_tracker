@@ -2,8 +2,8 @@
     <node name="visualeyez_tracker" pkg="visualeyez_tracker" type="visualeyez_tracker" output="screen">
         <param name="socket_timeout" value="20" type="int" />
         <param name="server_port" value="12345" type="str"/>
-        <param name="server_ip"   value="10.10.101.16" type="str"/>
-    <remap from="uav/pose_NED" to="mavros/position/vision"/>
+        <param name="server_ip"   value="10.0.0.103" type="str"/>
+    <remap from="uav/pose_ENU" to="mavros/position/vision"/>
     </node>
 
 

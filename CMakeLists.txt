@@ -4,8 +4,8 @@ project(visualeyez_tracker)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(Eigen REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
+  cmake_modules
   roscpp
   rospy
   std_msgs
@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   tf
 )
+find_package(Eigen REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
