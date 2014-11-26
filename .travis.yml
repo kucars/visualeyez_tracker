@@ -23,7 +23,7 @@ before_install:
 install:
 # Create workspace
 - mkdir -p ~/ros/kuri_catkin_ws/src
-- cd ~/ros/ros/kuri_catkin_ws/src
+- cd ~/ros/kuri_catkin_ws/src
 - wstool init .
 - git clone https://github.com/uji-ros-pkg/underwater_simulation.git
 - rm -rf $REPOSITORY_NAME
