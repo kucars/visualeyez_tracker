@@ -4,8 +4,13 @@ project(visualeyez_tracker)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+set( ROS_DISTRO $ENV{ROS_DISTRO} )
+if( ${ROS_DISTRO} STREQUAL "indigo" )
+    message( "It Worked" )
+    find_package(catkin REQUIRED COMPONENTS cmake_modules)
+endif()
+
 find_package(catkin REQUIRED COMPONENTS
-  #cmake_modules
   roscpp
   rospy
   std_msgs
