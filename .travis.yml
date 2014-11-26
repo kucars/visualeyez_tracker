@@ -26,8 +26,8 @@ install:
 - cd ~/ros/kuri_catkin_ws/src
 - wstool init .
 - git clone https://github.com/kuri-kustar/visualeyez_tracker.git
-- rm -rf $REPOSITORY_NAME
-- ln -s $CI_SOURCE_PATH . # Link the repo we are testing to the new workspace
+#- rm -rf $REPOSITORY_NAME
+#- ln -s $CI_SOURCE_PATH . # Link the repo we are testing to the new workspace
 - cd ../
 # Install dependencies for source repos
 # - rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
