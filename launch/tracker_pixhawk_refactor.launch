@@ -3,7 +3,7 @@
         <param name="socket_timeout" value="20" type="int" />
         <param name="server_port" value="12345" type="str"/>
         <param name="server_ip"   value="10.0.0.103" type="str"/>
-    <remap from="uav/pose_ENU" to="mavros/vision_pose/vision"/>
+    <remap from="uav/pose_ENU" to="mavros/vision_pose/pose"/>
     </node>
 
 
