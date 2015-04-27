@@ -181,27 +181,36 @@ void Robot::updateRobotPose()
     //////////////////////
     // Broadcast TF NWU //
     //////////////////////
-
+    
+    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
+    transform.setRotation(tf::createQuaternionFromYaw(yaw+PI/4.0f));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_NWU"));
+    /*
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), 0.0) );
-    transform.setRotation(tf::createQuaternionFromYaw(yaw+PI/4));
+    transform.setRotation(tf::createQuaternionFromYaw(yaw+PI/4.0f));
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint_NWU"));
 
     transform.setOrigin(tf::Vector3(0.0, 0.0, markers_position[0].z()));
     transform.setRotation(tf::createQuaternionFromRPY(roll,pitch,0.0));
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_footprint_NWU", robot_id_+"/base_link_NWU"));
-
+    */
     //////////////////////
     // Broadcast TF ENU //
     //////////////////////
+    
+    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
+    transform.setRotation(tf::createQuaternionFromRPY(0.0,0.0,yaw-PI/4.0f));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_ENU"));
 
+    /*
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), 0.0) );
-    transform.setRotation(tf::createQuaternionFromRPY(0.0,0.0,yaw-PI/4));
+    transform.setRotation(tf::createQuaternionFromRPY(0.0,0.0,yaw-PI/4.0f));
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint_ENU"));
 
     transform.setOrigin(tf::Vector3(0.0, 0.0, markers_position[0].z()));
     transform.setRotation(tf::createQuaternionFromRPY(-pitch,roll,0.0));
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_footprint_ENU", robot_id_+"/base_link_ENU"));
-
+    */
 
 
 
