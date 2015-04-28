@@ -114,104 +114,87 @@ void Robot::updateRobotPose()
     Eigen::Matrix<double, 3, 3> rotation_matrix;
     rotation_matrix << x_axis, y_axis, z_axis;
     Eigen::Quaternion<double> quaternion(rotation_matrix);
+/*
+    Eigen::Matrix<double,3,1> euler=Eigen::Quaterniond(quaternion.x(),quaternion.y(),quaternion.z(),quaternion.w()).matrix().eulerAngles(2, 1, 0);
+
+
+    double yaw0 = euler(0,0) - PI/4.0f;
+    double yaw1 = euler(0,0) - 3*PI/4.0f;
+
+    double pitch0 = euler(1,0);
+    double roll0 = euler(2,0);
+*/  
+    
+    static tf::TransformBroadcaster br;
+    tf::Transform transform;
+    double roll, pitch, yaw;
+    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
+    tf::Quaternion q(quaternion.x(),quaternion.y(),quaternion.z(),quaternion.w());
+    transform.setRotation(q);
+    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+    
+    
+    //tf::Transform transform0;  
+    
+    
+  
+
 
     ////////////////////////////
     // Publish PoseStamped NWU//
     ////////////////////////////
-
+    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
+    transform.setRotation(tf::createQuaternionFromYaw(yaw + PI/4.0f));
     geometry_msgs::PoseStamped pose_msg;
     pose_msg.header.stamp=ros::Time::now();
     //pose_nwu_msg.header.frame_id=robot_id_;
     pose_msg.header.frame_id="world";
 
-    pose_msg.pose.position.x = markers_position[0].x();
-    pose_msg.pose.position.y = markers_position[0].y();
-    pose_msg.pose.position.z = markers_position[0].z();
-    pose_msg.pose.orientation.w=quaternion.w();
-    pose_msg.pose.orientation.x=quaternion.x();
-    pose_msg.pose.orientation.y=quaternion.y();
-    pose_msg.pose.orientation.z=quaternion.z();
-    pose_nwu_pub.publish(pose_msg);
-
+    pose_msg.pose.position.x = transform.getOrigin().x();
+    pose_msg.pose.position.y = transform.getOrigin().y();
+    pose_msg.pose.position.z = transform.getOrigin().z();
+    pose_msg.pose.orientation.w=transform.getRotation().w();
+    pose_msg.pose.orientation.x=transform.getRotation().x() ; 
+    pose_msg.pose.orientation.y=transform.getRotation().y();
+    pose_msg.pose.orientation.z=transform.getRotation().z();
+    pose_nwu_pub.publish(pose_msg); 
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_NWU"));
+   
     //////////////////////////
     // Publish odometry NWU //
     //////////////////////////
+    
 
     nav_msgs::Odometry odom_msg;
     odom_msg.header=pose_msg.header;
     odom_msg.pose.pose=pose_msg.pose;
     odom_nwu_pub.publish(odom_msg);
-
     ////////////////////////////
     // Publish PoseStamped ENU//
     ////////////////////////////
-
-    pose_msg.pose.position.x =-markers_position[0].y();
-    pose_msg.pose.position.y = markers_position[0].x();
+    
+    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
+    transform.setRotation(tf::createQuaternionFromYaw(yaw - PI/4.0f));
+    
+    pose_msg.pose.position.x =transform.getOrigin().x();
+    pose_msg.pose.position.y = transform.getOrigin().y();
+    pose_msg.pose.position.z = transform.getOrigin().z();
+    pose_msg.pose.orientation.w=transform.getRotation().w();
+    pose_msg.pose.orientation.x=transform.getRotation().x() ; 
+    pose_msg.pose.orientation.y=transform.getRotation().y();
+    pose_msg.pose.orientation.z=transform.getRotation().z();
     pose_enu_pub.publish(pose_msg);
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_ENU"));
 
     //////////////////////////
     // Publish odometry ENU //
     //////////////////////////
 
+    
+    
     odom_msg.header = pose_msg.header;
     odom_msg.pose.pose = pose_msg.pose;
     odom_enu_pub.publish(odom_msg);
-
-    ///////////////////
-    // Broadcast TF  //
-    ///////////////////
-
-    static tf::TransformBroadcaster br;
-    tf::Transform transform;
-    double roll, pitch, yaw;
-
-    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
-    tf::Quaternion q(quaternion.x(),quaternion.y(),quaternion.z(),quaternion.w());
-    transform.setRotation(q);
-    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
-
-    //br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_link"));
-
-    //transform.setRotation( tf::Quaternion(0.0,0.0,0.0,1.0));
-    //transform.setOrigin( tf::Vector3(0.0, 0.0, -markers_position[0].z()) );
-    //br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_link", robot_id_+"/base_footprint"));
-
-
-    //////////////////////
-    // Broadcast TF NWU //
-    //////////////////////
-    
-    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
-    transform.setRotation(tf::createQuaternionFromYaw(yaw+PI/4.0f));
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_NWU"));
-    /*
-    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), 0.0) );
-    transform.setRotation(tf::createQuaternionFromYaw(yaw+PI/4.0f));
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint_NWU"));
-
-    transform.setOrigin(tf::Vector3(0.0, 0.0, markers_position[0].z()));
-    transform.setRotation(tf::createQuaternionFromRPY(roll,pitch,0.0));
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_footprint_NWU", robot_id_+"/base_link_NWU"));
-    */
-    //////////////////////
-    // Broadcast TF ENU //
-    //////////////////////
-    
-    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
-    transform.setRotation(tf::createQuaternionFromRPY(0.0,0.0,yaw-PI/4.0f));
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_ENU"));
-
-    /*
-    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), 0.0) );
-    transform.setRotation(tf::createQuaternionFromRPY(0.0,0.0,yaw-PI/4.0f));
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/base_footprint_ENU"));
-
-    transform.setOrigin(tf::Vector3(0.0, 0.0, markers_position[0].z()));
-    transform.setRotation(tf::createQuaternionFromRPY(-pitch,roll,0.0));
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), robot_id_+"/base_footprint_ENU", robot_id_+"/base_link_ENU"));
-    */
-
 
 
     /*for(int i=0; i<markers_state.size(); ++i)
