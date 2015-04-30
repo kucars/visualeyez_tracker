@@ -58,8 +58,7 @@ class Robot
 
     ros::Publisher pose_nwu_pub;
     ros::Publisher pose_enu_pub;
-    ros::Publisher odom_nwu_pub;
-    ros::Publisher odom_enu_pub;
+    ros::Publisher pose_enu_corr_pub;
     ros::NodeHandle n_;
 
     std::vector<Eigen::Vector3d> markers_offsets;
