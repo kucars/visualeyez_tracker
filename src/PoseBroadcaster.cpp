@@ -64,7 +64,7 @@ Robot::Robot(ros::NodeHandle & n,std::string robot_id,
 
     pose_nwu_pub      = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_NWU", 100);
     pose_enu_pub      = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_ENU", 100);
-    pose_enu_corr_pub = n_.advertise<nav_msgs::Odometry>("pose_ENU_corr", 100);
+    pose_enu_corr_pub = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_ENU_corr", 100);
 }
 
 void Robot::updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & position)
