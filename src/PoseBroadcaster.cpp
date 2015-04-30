@@ -164,6 +164,8 @@ void Robot::updateRobotPose()
     pose_enu_pub.publish(pose_msg);
     
     /* This is a hack to resolve the point of confusion */
+    pose_msg.header.stamp=ros::Time::now();
+    pose_msg.header.frame_id="world";    
     pose_msg.pose.position.x = markers_position[0].x();
     pose_msg.pose.position.y = markers_position[0].y();
     pose_msg.pose.position.z = markers_position[0].z();
