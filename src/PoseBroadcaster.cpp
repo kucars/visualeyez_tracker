@@ -21,7 +21,6 @@
 ***********************************************************************************/
 #include "ros/ros.h"
 #include "std_msgs/String.h"
-//#include "pctx_control/Control.h"
 #include "visualeyez_tracker/TrackerPose.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Twist.h"
@@ -63,10 +62,9 @@ Robot::Robot(ros::NodeHandle & n,std::string robot_id,
         markers_offsets[i]=Eigen::Vector3d(0.0,0.0,0.0);
     }
 
-    pose_nwu_pub = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_NWU", 100);
-    pose_enu_pub = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_ENU", 100);
-    odom_nwu_pub = n_.advertise<nav_msgs::Odometry>("odometry_NWU", 100);
-    odom_enu_pub = n_.advertise<nav_msgs::Odometry>("odometry_ENU", 100);
+    pose_nwu_pub      = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_NWU", 100);
+    pose_enu_pub      = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_ENU", 100);
+    pose_enu_corr_pub = n_.advertise<nav_msgs::Odometry>("odometry_NWU", 100);
 }
 
 void Robot::updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & position)
@@ -164,16 +162,17 @@ void Robot::updateRobotPose()
     pose_msg.pose.orientation.y = quaternion.y();
     pose_msg.pose.orientation.z = quaternion.z();    
     pose_enu_pub.publish(pose_msg);
-    /*
+    
+    /* This is a hack to resolve the point of confusion */
     pose_msg.pose.position.x = markers_position[0].x();
     pose_msg.pose.position.y = markers_position[0].y();
     pose_msg.pose.position.z = markers_position[0].z();
-    pose_msg.pose.orientation.w=correctedQuaternionENU.w();
-    pose_msg.pose.orientation.x=correctedQuaternionENU.x();
-    pose_msg.pose.orientation.y=correctedQuaternionENU.y();
-    pose_msg.pose.orientation.z=correctedQuaternionENU.z();
-    pose_nwu_pub.publish(pose_msg);    
-    */
+    pose_msg.pose.orientation.w = correctedQuaternionENU.w();
+    pose_msg.pose.orientation.x = correctedQuaternionENU.x();
+    pose_msg.pose.orientation.y = correctedQuaternionENU.y();
+    pose_msg.pose.orientation.z = correctedQuaternionENU.z();
+    pose_enu_corr_pub.publish(pose_msg);    
+
    
     marker_change=false;
 }
