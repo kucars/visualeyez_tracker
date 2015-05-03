@@ -64,7 +64,6 @@ Robot::Robot(ros::NodeHandle & n,std::string robot_id,
 
     pose_nwu_pub      = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_NWU", 100);
     pose_enu_pub      = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_ENU", 100);
-    pose_enu_corr_pub = n_robot_priv.advertise<geometry_msgs::PoseStamped>("pose_ENU_corr", 100);
 }
 
 void Robot::updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & position)
@@ -108,8 +107,7 @@ void Robot::updateRobotPose()
     Eigen::Vector3d x_axis=((markers_position[1]+markers_offsets[1])-(markers_position[0]+markers_offsets[0])).normalized(); // Heading
     Eigen::Vector3d z_axis=x_axis.cross( ( (markers_position[2]+markers_offsets[2])-(markers_position[1]+markers_offsets[1]) ).normalized() ).normalized();
     Eigen::Vector3d y_axis=z_axis.cross(x_axis).normalized();
-    //        std::cout << "x_axis: "<<x_axis.transpose() <<  " y_axis: "<<y_axis.transpose() << " z_axis: "<<z_axis.transpose() << std::endl;
-    
+
     static tf::TransformBroadcaster br;    
     tf::Transform transform;
     geometry_msgs::PoseStamped pose_msg;
@@ -122,59 +120,83 @@ void Robot::updateRobotPose()
     double roll, pitch, yaw;
     tf::Matrix3x3(q).getRPY(roll, pitch, yaw);  
 
-    ////////////////////////////
-    // Publish PoseStamped NWU//
-    ////////////////////////////
-    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
+    transform.setOrigin(tf::Vector3(0,0,0));
+    tf::Quaternion qt = tf::createQuaternionFromRPY(0,0,0);
+    transform.setRotation(qt);  
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/NWU_world"));  
+    
+    qt = tf::createQuaternionFromRPY(0,0,-PI/2.0f);
+    transform.setRotation(qt);  
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/ENU_world"));  
+    
     // Correct the heading (due to the fact that the marker placement is skew by 45 degrees) 
-    // by 45 degrees CW = -ve addition to yaw (rotation around z-axis)
-    tf::Quaternion correctedQuaternionNWM = tf::createQuaternionFromYaw(yaw - PI/4.0f);
-    transform.setRotation(correctedQuaternionNWM);  
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_NWU"));    
+    // by 45 degrees CCW = +ve addition to yaw (rotation around z-axis)    
+    qt = tf::createQuaternionFromYaw(yaw + PI/4.0f + PI/2.0f);
+    pose_msg.header.stamp       = ros::Time::now();
+    pose_msg.header.frame_id    = "world";
+    // I can't seem to find the function that transfroms a pose using tf::transform
+    // so it's hard coded for now in the ENU frame
+    pose_msg.pose.position.x    =-markers_position[0].y();
+    pose_msg.pose.position.y    = markers_position[0].x();
+    pose_msg.pose.position.z    = markers_position[0].z();
+    pose_msg.pose.orientation.w = qt.w();
+    pose_msg.pose.orientation.x = qt.x();
+    pose_msg.pose.orientation.y = qt.y();
+    pose_msg.pose.orientation.z = qt.z();    
+    pose_enu_pub.publish(pose_msg);
     
-    pose_msg.header.stamp=ros::Time::now();
-    pose_msg.header.frame_id="world";
-    pose_msg.pose.position.x = markers_position[0].x();
-    pose_msg.pose.position.y = markers_position[0].y();
-    pose_msg.pose.position.z = markers_position[0].z();
-    pose_msg.pose.orientation.w=correctedQuaternionNWM.w();
-    pose_msg.pose.orientation.x=correctedQuaternionNWM.x();
-    pose_msg.pose.orientation.y=correctedQuaternionNWM.y();
-    pose_msg.pose.orientation.z=correctedQuaternionNWM.z();
-    pose_nwu_pub.publish(pose_msg);    
-    
-    ////////////////////////////
-    // Publish PoseStamped ENU//
-    ////////////////////////////
-    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );    
-    // To change from NWU to ENU we have to rotate 90 degrees CW (-ve) around z-axis = yaw
-    // This has to be done after correcting the orinetaiton offse of 45 degrees CW : Total=> -90 - 45 = -135 degrees
-    tf::Quaternion correctedQuaternionENU = tf::createQuaternionFromYaw(yaw - 3.0*PI/4.0f);    
-    transform.setRotation(correctedQuaternionENU);      
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_ENU"));
-    
-    pose_msg.header.stamp=ros::Time::now();
-    pose_msg.header.frame_id="world";
-    pose_msg.pose.position.x =-markers_position[0].y();
-    pose_msg.pose.position.y = markers_position[0].x();
+    /*
+    pose_msg.header.stamp       = ros::Time::now();
+    pose_msg.header.frame_id    = "world";
+    pose_msg.pose.position.x    =-markers_position[0].y();
+    pose_msg.pose.position.y    = markers_position[0].x();
+    pose_msg.pose.position.z    = markers_position[0].z();
     pose_msg.pose.orientation.w = quaternion.w();
     pose_msg.pose.orientation.x = quaternion.x();
     pose_msg.pose.orientation.y = quaternion.y();
     pose_msg.pose.orientation.z = quaternion.z();    
     pose_enu_pub.publish(pose_msg);
-    
-    /* This is a hack to resolve the point of confusion */
-    pose_msg.header.stamp=ros::Time::now();
-    pose_msg.header.frame_id="world";    
-    pose_msg.pose.position.x = markers_position[0].x();
-    pose_msg.pose.position.y = markers_position[0].y();
-    pose_msg.pose.position.z = markers_position[0].z();
-    pose_msg.pose.orientation.w = correctedQuaternionENU.w();
-    pose_msg.pose.orientation.x = correctedQuaternionENU.x();
-    pose_msg.pose.orientation.y = correctedQuaternionENU.y();
-    pose_msg.pose.orientation.z = correctedQuaternionENU.z();
-    pose_enu_corr_pub.publish(pose_msg);    
 
+    
+    ////////////////////////////
+    // Publish PoseStamped NWU//
+    ////////////////////////////
+    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
+    // Correct the heading (due to the fact that the marker placement is skew by 45 degrees) 
+    // by 45 degrees CCW = +ve addition to yaw (rotation around z-axis)
+    tf::Quaternion correctedQuaternionNWM = tf::createQuaternionFromYaw(PI/4.0f);
+    transform.setRotation(correctedQuaternionNWM);  
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_NWU"));    
+    
+    pose_msg.header.stamp       = ros::Time::now();
+    pose_msg.header.frame_id    = "world";
+    pose_msg.pose.position.x    = markers_position[0].x();
+    pose_msg.pose.position.y    = markers_position[0].y();
+    pose_msg.pose.position.z    = markers_position[0].z();
+    pose_msg.pose.orientation.w = correctedQuaternionNWM.w();
+    pose_msg.pose.orientation.x = correctedQuaternionNWM.x();
+    pose_msg.pose.orientation.y = correctedQuaternionNWM.y();
+    pose_msg.pose.orientation.z = correctedQuaternionNWM.z();
+    pose_nwu_pub.publish(pose_msg);    
+    */
+    ////////////////////////////
+    // Publish PoseStamped ENU//
+    ////////////////////////////
+    transform.setOrigin( tf::Vector3(-markers_position[0].y(), markers_position[0].x(), markers_position[0].z()) );    
+    // To change from NWU to ENU we have to rotate 90 degrees CW (-ve) around z-axis = yaw
+    // This has to be done after correcting the orinetaiton offse of 45 degrees CCW : Total=> -90 + 45 = -45 degrees
+    tf::Quaternion correctedQuaternionENU = tf::createQuaternionFromYaw(yaw + PI/4.0f + PI/2.0f);    
+    transform.setRotation(correctedQuaternionENU);      
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_ENU"));
+    
+    /*
+    transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );    
+    // To change from NWU to ENU we have to rotate 90 degrees CW (-ve) around z-axis = yaw
+    // This has to be done after correcting the orinetaiton offse of 45 degrees CCW : Total=> -90 + 45 = -45 degrees
+    tf::Quaternion correctedQuaternionENU = tf::createQuaternionFromYaw(yaw -PI/4.0f);    
+    transform.setRotation(correctedQuaternionENU);      
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_ENU"));
+    */
    
     marker_change=false;
 }
