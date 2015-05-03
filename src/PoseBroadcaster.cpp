@@ -126,10 +126,10 @@ void Robot::updateRobotPose()
     // Publish PoseStamped NWU//
     ////////////////////////////
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );
-    tf::Quaternion correctedQuaternionNWM = tf::createQuaternionFromYaw(yaw + PI/4.0f);
-    transform.setRotation(correctedQuaternionNWM);  
     // Correct the heading (due to the fact that the marker placement is skew by 45 degrees) 
-    // by 45 degrees CCW = +ve addition to yaw (rotation around z-axis)
+    // by 45 degrees CW = -ve addition to yaw (rotation around z-axis)
+    tf::Quaternion correctedQuaternionNWM = tf::createQuaternionFromYaw(yaw - PI/4.0f);
+    transform.setRotation(correctedQuaternionNWM);  
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_NWU"));    
     
     pose_msg.header.stamp=ros::Time::now();
@@ -147,10 +147,10 @@ void Robot::updateRobotPose()
     // Publish PoseStamped ENU//
     ////////////////////////////
     transform.setOrigin( tf::Vector3(markers_position[0].x(), markers_position[0].y(), markers_position[0].z()) );    
-    tf::Quaternion correctedQuaternionENU = tf::createQuaternionFromYaw(yaw - PI/4.0f);    
-    transform.setRotation(correctedQuaternionENU);      
     // To change from NWU to ENU we have to rotate 90 degrees CW (-ve) around z-axis = yaw
-    // This has to be done after correcting the orinetaiton offse of 45 degrees CCW : Total=> -90 + 45 = +45 degrees
+    // This has to be done after correcting the orinetaiton offse of 45 degrees CW : Total=> -90 - 45 = -135 degrees
+    tf::Quaternion correctedQuaternionENU = tf::createQuaternionFromYaw(yaw - 3.0*PI/4.0f);    
+    transform.setRotation(correctedQuaternionENU);      
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", robot_id_+"/baselink_ENU"));
     
     pose_msg.header.stamp=ros::Time::now();
