@@ -1,0 +1,5 @@
+<launch>
+  <arg name="test" default="-h" />
+  <node pkg="visualeyez_tracker" type="recordVideo.sh" args="$(arg test)" name="" output="screen">
+  </node>
+</launch>
