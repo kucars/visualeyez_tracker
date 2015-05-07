@@ -2,22 +2,22 @@
 * Copyright (C) 2013 - 2014 by                                                    *
 * Rui P. de Figueiredo and Tarek Taha, Khalifa University Robotics Institute KURI *
 *                 <rui.defigueiredo@kustar.ac.ae>, <tarek.taha@kustar.ac.ae>      *
-*                                                                          	      *
 *                                                                                 *
-* This program is free software; you can redistribute it and/or modify     	      *
-* it under the terms of the GNU General Public License as published by     	      *
-* the Free Software Foundation; either version 2 of the License, or        	      *
-* (at your option) any later version.                                      	      *
-*                                                                          	      *
-* This program is distributed in the hope that it will be useful,          	      *
-* but WITHOUT ANY WARRANTY; without even the implied warranty of           	      *
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             	      *
+*                                                                                 *
+* This program is free software; you can redistribute it and/or modify     	  *
+* it under the terms of the GNU General Public License as published by            *
+* the Free Software Foundation; either version 2 of the License, or               *
+* (at your option) any later version.                                             *
+*                                                                                 *
+* This program is distributed in the hope that it will be useful,                 *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of                  *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the                    *
 * GNU General Public License for more details.                              	  *
-*                                                                          	      *
-* You should have received a copy of the GNU General Public License        	      *
-* along with this program; if not, write to the                            	      *
-* Free Software Foundation, Inc.,                                          	      *
-* 51 Franklin Steet, Fifth Floor, Boston, MA 02111-1307, USA.              	      *
+*                                                                                 *
+* You should have received a copy of the GNU General Public License               *
+* along with this program; if not, write to the                                   *
+* Free Software Foundation, Inc.,                                                 *
+* 51 Franklin Steet, Fifth Floor, Boston, MA 02111-1307, USA.                     *
 ***********************************************************************************/
 #include "ros/ros.h"
 #include "std_msgs/String.h"
@@ -77,8 +77,6 @@ void Robot::updateMarkerPosition(std::string & marker_id, Eigen::Vector3d & posi
 
     // Update state
     markers_state[type]=true;
-    //        std::cout << "robot:" << robot_id_ <<" marker update:" << marker_id << " position:" << position.transpose() << std::endl;
-
     for(int i=0; i<markers_position.size(); ++i)
     {
         if(!markers_state[i])
@@ -104,9 +102,9 @@ void Robot::updateRobotPose()
     //X    - 1
     //Y    - 2
     // Define a local reference frame
-    Eigen::Vector3d x_axis=((markers_position[1]+markers_offsets[1])-(markers_position[0]+markers_offsets[0])).normalized(); // Heading
-    Eigen::Vector3d z_axis=x_axis.cross( ( (markers_position[2]+markers_offsets[2])-(markers_position[1]+markers_offsets[1]) ).normalized() ).normalized();
-    Eigen::Vector3d y_axis=z_axis.cross(x_axis).normalized();
+    Eigen::Vector3d x_axis = ((markers_position[1]+markers_offsets[1])-(markers_position[0]+markers_offsets[0])).normalized(); // Heading
+    Eigen::Vector3d z_axis = x_axis.cross( ( (markers_position[2]+markers_offsets[2])-(markers_position[1]+markers_offsets[1]) ).normalized() ).normalized();
+    Eigen::Vector3d y_axis = z_axis.cross(x_axis).normalized();
 
     static tf::TransformBroadcaster br;    
     tf::Transform transform;
@@ -203,29 +201,21 @@ void Robot::updateRobotPose()
 
 void Robot::flatTrim()
 {
-    ROS_INFO("Auto flat trim...");
-
-
+    ROS_INFO("Auto flat trim... (removing z-offset of markers to make them planner)");
 
     markers_offsets[1](2,0)=markers_position[0](2,0)-markers_position[1](2,0);
     markers_offsets[2](2,0)=markers_position[0](2,0)-markers_position[2](2,0);
-
-
+    
     std::cout << markers_offsets[0].transpose() << std::endl;
     std::cout << markers_offsets[1].transpose() << std::endl;
     std::cout << markers_offsets[2].transpose() << std::endl;
-
     ROS_INFO("Done.");
-
 }
 
 PoseBroadcaster::PoseBroadcaster(ros::NodeHandle & n) :
     n_(n)
 {
-
     add_robot_service_ = n.advertiseService("add_robot_tracker", &PoseBroadcaster::addRobotTrackerCallback, this);
-
-    //markers_sub = n_.subscribe("/TrackerPosition", 100, &PoseBroadcaster::poseFromMarkers, this);
 }
 
 bool PoseBroadcaster::addRobotTrackerCallback(visualeyez_tracker::AddRobotTracker::Request  &req,
@@ -240,8 +230,6 @@ bool PoseBroadcaster::addRobotTrackerCallback(visualeyez_tracker::AddRobotTracke
     robots.insert(std::map<std::string, boost::shared_ptr<Robot> >::value_type( req.origin_marker_id, RobotPtr));
     robots.insert(std::map<std::string, boost::shared_ptr<Robot> >::value_type( req.x_marker_id, RobotPtr));
     robots.insert(std::map<std::string, boost::shared_ptr<Robot> >::value_type( req.y_marker_id, RobotPtr));
-
-
     std::cout << "inserted new robot with id:" << req.robot_name<< " and markers (base marker: " << req.origin_marker_id << ", x marker: "<< req.x_marker_id << ", y marker: " << req.y_marker_id<< ")"<< std::endl;
     return true;
 }
@@ -254,12 +242,8 @@ void PoseBroadcaster::updateMarker(const visualeyez_tracker::TrackerPose & track
     std::map<std::string,boost::shared_ptr<Robot> >::iterator it=robots.find(marker_id);
     if(it != robots.end())
     {
-        //std::cout <<  "found:" <<marker_id << std::endl;
-        //element found;
         it->second->updateMarkerPosition(marker_id,marker_position);
     }
-    //else
-    //std::cout <<  "not found:" <<marker_id << std::endl;
 }
 
 void PoseBroadcaster::updateMarker(const std::vector<visualeyez_tracker::TrackerPose>  &trackerPoses)
@@ -280,6 +264,5 @@ void PoseBroadcaster::updateMarker(const std::vector<visualeyez_tracker::Tracker
     {
 	it->second->updateRobotPose();
     }
-
 }
 
