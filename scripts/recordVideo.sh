@@ -13,7 +13,7 @@ else
     dateStamp=$(date +"%Y-%m-%d_%H:%M:%S")
     filename="/home/kuri/ownCloud/Videos/AutoRecorded/$dateStamp.mp4"
     echo $filename
-    avconv -f video4linux2 -r 30 -i /dev/video0 -f alsa -i plughw:C615,0 -s 1920x1080 -strict experimental -acodec aac -threads 4 -vcodec mpeg4 -y $filename    
+    avconv -f video4linux2 -r 30 -i /dev/video0 -f alsa -i plughw:C615,0 -s 1920x1080 -qscale 4 -ar 44100 -ab 128k -strict experimental -acodec aac -threads 4 -vcodec mpeg4 -y $filename    
     #roslaunch $@
 fi
 
