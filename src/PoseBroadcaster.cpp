@@ -129,14 +129,19 @@ void Robot::updateRobotPose()
     
     // Correct the heading (due to the fact that the marker placement is skew by 45 degrees) 
     // by 45 degrees CCW = +ve addition to yaw (rotation around z-axis)    
-    qt = tf::createQuaternionFromYaw(yaw + PI/4.0f + PI/2.0f);
+    qt = tf::createQuaternionFromYaw(yaw + PI/4.0f);
     pose_msg.header.stamp       = ros::Time::now();
     pose_msg.header.frame_id    = "world";
     // I can't seem to find the function that transfroms a pose using tf::transform
     // so it's hard coded for now in the ENU frame
+    /*
     pose_msg.pose.position.x    =-markers_position[0].y();
     pose_msg.pose.position.y    = markers_position[0].x();
     pose_msg.pose.position.z    = markers_position[0].z();
+    */
+    pose_msg.pose.position.x    = markers_position[0].x();
+    pose_msg.pose.position.y    = markers_position[0].y();
+    pose_msg.pose.position.z    = markers_position[0].z();    
     pose_msg.pose.orientation.w = qt.w();
     pose_msg.pose.orientation.x = qt.x();
     pose_msg.pose.orientation.y = qt.y();
@@ -154,7 +159,7 @@ void Robot::updateRobotPose()
     pose_msg.pose.orientation.y = quaternion.y();
     pose_msg.pose.orientation.z = quaternion.z();    
     pose_enu_pub.publish(pose_msg);
-
+    */
     
     ////////////////////////////
     // Publish PoseStamped NWU//
@@ -176,7 +181,7 @@ void Robot::updateRobotPose()
     pose_msg.pose.orientation.y = correctedQuaternionNWM.y();
     pose_msg.pose.orientation.z = correctedQuaternionNWM.z();
     pose_nwu_pub.publish(pose_msg);    
-    */
+    
     ////////////////////////////
     // Publish PoseStamped ENU//
     ////////////////////////////
